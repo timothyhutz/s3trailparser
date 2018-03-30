@@ -44,7 +44,6 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 		pass
 
 
-
 def main(event, context):
 	logging.debug(event)
 	for record in event['Records']:

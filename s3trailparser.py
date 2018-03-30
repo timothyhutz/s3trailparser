@@ -7,16 +7,18 @@ import gzip
 import logging
 import os
 
-LOG_LEVEL = os.environ('LOG_LEVEL')
-if LOG_LEVEL is None: # Presets the Logging Level if you didn't define it in ENV variables
+log_level = os.environ['LOG_LEVEL']
+if log_level is None or log_level is 'info': # Presets the Logging Level if you didn't define it in ENV variables
 	log_config_level = logging.INFO
+elif log_level is 'debug':
+	log_config_level = logging.DEBUG
 else:
-	log_config_level = LOG_LEVEL
+	log_config_level = logging.INFO # Logging level can only be set to info or debug..
 
 logging.getLogger().setLevel(log_config_level)
 
-ES_ENDPOINT = os.environ('ES_ENDPOINT')
-if ES_ENDPOINT is None: # Fails app because Elastic Search is a critical component to this
+es_endpoint = os.environ['ES_ENDPOINT']
+if es_endpoint is None: # Fails app because Elastic Search is a critical component to this
 	logging.critical('Missing Elastic Search Endpoint ')
 	exit(1)
 
@@ -37,12 +39,12 @@ class DataGz(object): # This class gets the S3 GZ object and returns the body da
 
 
 class ESload(object): # This class parses the data and pushes it to the indexer...
-	def __init__(self, streamdata):
+	def __init__(self, streamdata, es_endpoint):
 		self.streamdata = streamdata
-		self.url = ES_ENDPOINT
-
-	def __call__(self, *args, **kwargs):
+		self.url = es_endpoint
+	def __call__(self, *args):
 		pass
+
 
 
 def main(event, context):
@@ -54,12 +56,9 @@ def main(event, context):
 		unzipstream = None
 		try:
 			unzipstream = gzip.open(filedata, 'rb')
+			streamdata= unzipstream.read().decode('utf8')
+			ESload(streamdata, es_endpoint)
+			unzipstream.close()
 		except Exception as message:
 			logging.error(message)
 			exit(3)
-		try:
-			streamdata = unzipstream.read().decode('utf8')
-		except Exception as message:
-			logging.error(message)
-			exit(4)
-		unzipstream.close()

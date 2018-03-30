@@ -57,8 +57,9 @@ def main(event, context):
 		try:
 			unzipstream = gzip.open(filedata, 'rb')
 			streamdata= unzipstream.read().decode('utf8')
-			ESload(streamdata, es_endpoint)
+			load_index = ESload(streamdata, es_endpoint)
 			unzipstream.close()
+			load_index()
 		except Exception as message:
 			logging.error(message)
 			exit(3)

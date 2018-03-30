@@ -5,8 +5,9 @@ for use in AWS lambda only on python 3.6 runtime
 import boto3
 import gzip
 import logging
+import os
 
-LOG_LEVEL = None
+LOG_LEVEL = os.environ('LOG_LEVEL')
 if LOG_LEVEL is None: # Presets the Logging Level if you didn't define it in ENV variables
 	log_config_level = logging.INFO
 else:
@@ -14,8 +15,8 @@ else:
 
 logging.getLogger().setLevel(log_config_level)
 
-ELASTISEARCHURL = None
-if ELASTISEARCHURL is None: # Fails app because Elastic Search is a critical component to this
+ES_ENDPOINT = os.environ('ES_ENDPOINT')
+if ES_ENDPOINT is None: # Fails app because Elastic Search is a critical component to this
 	logging.critical('Missing Elastic Search Endpoint ')
 	exit(1)
 
@@ -38,7 +39,7 @@ class DataGz(object): # This class gets the S3 GZ object and returns the body da
 class ESload(object): # This class parses the data and pushes it to the indexer...
 	def __init__(self, streamdata):
 		self.streamdata = streamdata
-		self.url = ELASTISEARCHURL
+		self.url = ES_ENDPOINT
 
 	def __call__(self, *args, **kwargs):
 		pass

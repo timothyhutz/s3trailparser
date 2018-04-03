@@ -23,6 +23,10 @@ if es_endpoint is None: # Fails app because Elastic Search is a critical compone
 	logging.critical('Missing Elastic Search Endpoint ')
 	exit(1)
 
+useragent_key = os.environ['KEY']
+if useragent_key is None:
+	logging.critical('Missing key for shitty AWS authentication')
+	exit(1)
 
 class DataGz(object): # This class gets the S3 GZ object and returns the body data to memory space variable.
 	def __init__(self, region): # Prebuilds the Client connection
@@ -55,7 +59,8 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 
 	def __call__(self, *args):
 		logging.debug(self.recordparse_data)
-		post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json"}, auth=boto3.Session('es'))
+
+		post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json", "User-Agent": "{}".format(useragent_key)})
 		logging.info(post.status_code)
 		logging.info(post.json())
 		return None

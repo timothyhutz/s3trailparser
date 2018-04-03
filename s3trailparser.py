@@ -8,6 +8,7 @@ import logging
 import os
 import json
 from botocore.vendored import requests
+import time
 
 
 
@@ -63,6 +64,7 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 			self.recordparse_data['sourceIPAddress'] = record['sourceIPAddress']
 			self.recordparse_data['requestParameters'] = record['requestParameters']
 			self.recordparse_data['resources'] = record['resources']
+			self.recordparse_data['LoadTime'] = time.strftime('%d%m%Y%H%M%S')
 			post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json", "User-Agent": "{}".format(useragent_key)})
 			logging.debug(post.status_code)
 			logging.debug(post.json())

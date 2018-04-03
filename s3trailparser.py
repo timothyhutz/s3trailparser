@@ -51,7 +51,11 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 		self.url = es_endpoint
 		logging.debug('ES endpoint set')
 		self.recordparse_data = {}
+
+	def __call__(self, *args):
+		logging.debug(self.recordparse_data)
 		for record in self.filedata:
+			self.recordparse_data.clear()
 			self.recordparse_data['userIdentity'] = record['userIdentity']
 			self.recordparse_data['eventName'] = record['eventName']
 			self.recordparse_data['awsRegion'] = record['awsRegion']
@@ -59,13 +63,9 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 			self.recordparse_data['sourceIPAddress'] = record['sourceIPAddress']
 			self.recordparse_data['requestParameters'] = record['requestParameters']
 			self.recordparse_data['resources'] = record['resources']
-
-	def __call__(self, *args):
-		logging.debug(self.recordparse_data)
-
-		post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json", "User-Agent": "{}".format(useragent_key)})
-		logging.info(post.status_code)
-		logging.info(post.json())
+			post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json", "User-Agent": "{}".format(useragent_key)})
+			logging.debug(post.status_code)
+			logging.debug(post.json())
 		return None
 
 

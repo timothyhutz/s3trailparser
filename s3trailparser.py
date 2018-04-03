@@ -6,14 +6,15 @@ import boto3
 import gzip
 import logging
 import os
+import json
+from botocore.vendored import requests
 
-log_level = os.environ['LOG_LEVEL']
-if log_level is None or log_level is 'info': # Presets the Logging Level if you didn't define it in ENV variables
+
+
+if os.environ['LOG_LEVEL'] is None or os.environ['LOG_LEVEL'] == 'info': # Presets the Logging Level if you didn't define it in ENV variables
 	log_config_level = logging.INFO
-elif log_level is 'debug':
-	log_config_level = logging.DEBUG
 else:
-	log_config_level = logging.INFO # Logging level can only be set to info or debug..
+	log_config_level = logging.DEBUG # Logging level can only be set to info or debug..
 
 logging.getLogger().setLevel(log_config_level)
 
@@ -30,20 +31,35 @@ class DataGz(object): # This class gets the S3 GZ object and returns the body da
 
 	def main(self, bucket, key): # This is the S3 Object call
 		try:
-			action = self.s3.get_object(Bucket=bucket, Key=key)['Body']
-			logging.debug(action)
-			return action
+			filedataloadunzipped = json.loads(gzip.decompress(self.s3.get_object(Bucket=bucket, Key=key)['Body'].read()))
+			logging.info('unzip complete')
+			return filedataloadunzipped
 		except Exception as message:
 			logging.critical(message)
 			exit(2)
 
 
 class ESload(object): # This class parses the data and pushes it to the indexer...
-	def __init__(self, streamdata, es_endpoint):
-		self.streamdata = streamdata
+	def __init__(self, filedata, es_endpoint):
+		logging.debug(es_endpoint)
+		self.filedata = filedata['Records']
+		logging.debug('filedata loaded')
 		self.url = es_endpoint
+		logging.debug('ES endpoint set')
+		self.recordparse_data = {}
+		for record in self.filedata:
+			self.recordparse_data['userIdentity'] = record['userIdentity']
+			self.recordparse_data['eventName'] = record['eventName']
+			self.recordparse_data['awsRegion'] = record['awsRegion']
+			self.recordparse_data['sourceIPAddress'] = record['sourceIPAddress']
+
 	def __call__(self, *args):
-		pass
+		logging.debug(self.recordparse_data)
+		post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json"}, auth=boto3.Session('es'))
+		logging.info(post.status_code)
+		logging.info(post.json())
+		return None
+
 
 
 
@@ -51,15 +67,8 @@ def main(event, context):
 	logging.debug(event)
 	for record in event['Records']:
 		filedata = DataGz(region=record['awsRegion']).main(key=record['s3']['object']['key'], bucket=record['s3']['bucket']['name'])
-		logging.info(record['awsRegion'] )
+		logging.debug(record['awsRegion'] )
 		logging.info(['bucket= ' + record['s3']['bucket']['name'],'File= ' + record['s3']['object']['key']])
-		unzipstream = None
-		try:
-			unzipstream = gzip.open(filedata, 'rb')
-			streamdata= unzipstream.read().decode('utf8')
-			load_index = ESload(streamdata, es_endpoint)
-			unzipstream.close()
-			load_index()
-		except Exception as message:
-			logging.error(message)
-			exit(3)
+		load_index_data = ESload(filedata, es_endpoint)
+		logging.debug("ESload init'd")
+		load_index_data()

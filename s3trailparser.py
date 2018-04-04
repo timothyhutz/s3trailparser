@@ -59,7 +59,6 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 			self.recordparse_data['userAgent'] = record['userAgent']
 			self.recordparse_data['eventSource'] = record['eventSource']
 			self.recordparse_data['sourceIPAddress'] = record['sourceIPAddress']
-			self.recordparse_data['requestParameters'] = record['requestParameters']
 			self.recordparse_data['resources'] = record['resources']
 			self.recordparse_data['LoadTime'] = time.strftime('%d%m%Y%H%M%S')
 			post = requests.post(

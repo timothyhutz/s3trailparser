@@ -11,8 +11,8 @@ from botocore.vendored import requests
 import time
 
 
-
-if os.environ['LOG_LEVEL'] is None or os.environ['LOG_LEVEL'] == 'info': # Presets the Logging Level if you didn't define it in ENV variables
+# Presets the Logging Level if you didn't define it in ENV variables
+if os.environ['LOG_LEVEL'] is None or os.environ['LOG_LEVEL'] == 'info':
 	log_config_level = logging.INFO
 else:
 	log_config_level = logging.DEBUG # Logging level can only be set to info or debug..
@@ -24,10 +24,6 @@ if es_endpoint is None: # Fails app because Elastic Search is a critical compone
 	logging.critical('Missing Elastic Search Endpoint ')
 	exit(1)
 
-useragent_key = os.environ['KEY']
-if useragent_key is None:
-	logging.critical('Missing key for shitty AWS authentication')
-	exit(1)
 
 class DataGz(object): # This class gets the S3 GZ object and returns the body data to memory space variable.
 	def __init__(self, region): # Prebuilds the Client connection
@@ -65,7 +61,10 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 			self.recordparse_data['requestParameters'] = record['requestParameters']
 			self.recordparse_data['resources'] = record['resources']
 			self.recordparse_data['LoadTime'] = time.strftime('%d%m%Y%H%M%S')
-			post = requests.post(self.url + '/cloudtrailindex/doc?pretty', json=self.recordparse_data, headers={"Content-Type": "application/json", "User-Agent": "{}".format(useragent_key)})
+			post = requests.post(
+					self.url + '/s3logs/doc?pretty', json=self.recordparse_data,
+					headers={"Content-Type": "application/json", "User-Agent": "{}".format(os.environ['ACCESS_KEY'])}
+					)
 			logging.debug(post.status_code)
 			logging.debug(post.json())
 		return None

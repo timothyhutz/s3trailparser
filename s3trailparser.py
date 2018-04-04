@@ -56,6 +56,7 @@ class ESload(object): # This class parses the data and pushes it to the indexer.
 			self.recordparse_data['userIdentity'] = record['userIdentity']
 			self.recordparse_data['eventName'] = record['eventName']
 			self.recordparse_data['awsRegion'] = record['awsRegion']
+			self.recordparse_data['userAgent'] = record['userAgent']
 			self.recordparse_data['eventSource'] = record['eventSource']
 			self.recordparse_data['sourceIPAddress'] = record['sourceIPAddress']
 			self.recordparse_data['requestParameters'] = record['requestParameters']
